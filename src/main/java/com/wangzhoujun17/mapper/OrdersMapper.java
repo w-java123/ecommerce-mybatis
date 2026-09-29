@@ -23,13 +23,19 @@ public interface OrdersMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int addOrders(Orders orders);
 
-    /** 根据ID删除订单（注解方式） */
+    /** 根据ID删除订单（注解方式，仅删除订单本身） */
     @Delete("delete from orders where id = #{id}")
     int deleteOrders(Integer id);
 
     /** 根据ID查询订单（注解方式，仅查询订单本身字段） */
     @Select("select * from orders where id = #{id}")
     Orders findOrdersById(Integer id);
+
+    /**
+     * 显式指定主键插入订单（映射文件方式）。
+     * 供测试还原被删除的种子数据使用，业务代码请用 addOrders。
+     */
+    int insertWithId(Orders orders);
 
     /** 查询全部订单（注解方式） */
     @Select("select * from orders order by id")

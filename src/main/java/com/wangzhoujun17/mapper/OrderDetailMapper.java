@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -21,6 +22,15 @@ public interface OrderDetailMapper {
             + "values(#{orderId}, #{productId}, #{quantity})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int addOrderDetail(OrderDetails detail);
+
+    /**
+     * 显式指定主键插入订单详情（映射文件方式）。
+     * 供测试还原被删除的种子数据使用，业务代码请用 addOrderDetail。
+     */
+    int insertDetailWithId(@Param("id") Integer id,
+                           @Param("orderId") Integer orderId,
+                           @Param("productId") Integer productId,
+                           @Param("quantity") Integer quantity);
 
     /** 根据ID删除订单详情 */
     @Delete("delete from orderdetails where id = #{id}")

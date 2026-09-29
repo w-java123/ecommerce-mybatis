@@ -10,6 +10,12 @@
         <result property="quantity"  column="quantity"/>
     </resultMap>
 
+    <!-- 显式指定主键插入：用于测试中还原被删除的种子数据 -->
+    <insert id="insertDetailWithId">
+        insert into orderdetails(id, order_id, product_id, quantity)
+        values(#{id}, #{orderId}, #{productId}, #{quantity})
+    </insert>
+
     <!-- ==================== 同时映射两个多对一关联 ====================
          一条订单详情 -> 属于一个订单（多对一）
                       -> 对应一个商品（多对一）

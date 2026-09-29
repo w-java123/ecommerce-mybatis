@@ -2,15 +2,86 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <!--
-     ProductMapper 的全部增删改查均通过接口上的注解实现，
-     本映射文件仅用于演示「接口与映射文件结合」的写法：
-     此处定义名称模糊查询的动态 SQL，接口中保留同名方法声明即可。
+     ProductMapper 演示「接口 + 映射文件」结合方式：
+     - 接口 ProductMapper.java 中以注解实现了一套 CRUD（addProduct / deleteProduct / ...）
+     - 本映射文件以 XML 实现了另一套等价的 CRUD（insertProduct / deleteProductById / ...）
+     两套并存，便于对比两种写法；同时本文件包含完整的 resultMap、insert、
+     update、delete 与动态 SQL，满足作业对映射文件的要求。
 -->
 <mapper namespace="com.wangzhoujun17.mapper.ProductMapper">
 
-    <!-- 名称模糊查询（XML 版，与注解版 findByProductName 二选一使用） -->
-    <select id="searchProductByName" parameterType="string" resultType="Products">
-        select * from products
+    <!-- ==================== resultMap：显式映射表字段与实体属性 ====================
+         列名 name / price / stock 分别映射到属性 name / price / stock，
+         显式声明可避免依赖驼峰映射等全局配置。
+         ========================================================================== -->
+    <resultMap type="Products" id="productsResult">
+        <id     property="id"    column="id"/>
+        <result property="name"  column="name"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+    </resultMap>
+
+    <!-- ==================== 增：插入商品 ==================== -->
+    <insert id="insertProduct" parameterType="Products"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into products(name, price, stock)
+        values(#{name}, #{price}, #{stock})
+    </insert>
+
+    <!-- ==================== 删：根据ID删除 ==================== -->
+    <delete id="deleteProductById" parameterType="int">
+        delete from products where id = #{id}
+    </delete>
+
+    <!-- ==================== 改：动态 SQL，只更新非空字段 ====================
+         注意：<set> 内所有 <if> 都不成立时会生成 "update products where id=?"
+         这样的非法 SQL，故调用方须至少传一个非空字段。
+         ==================================================================== -->
+    <update id="updateProductSelective" parameterType="Products">
+        update products
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="stock != null">
+                stock = #{stock},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- ==================== 查：根据ID ==================== -->
+    <select id="selectProductById" parameterType="int"
+            resultMap="productsResult">
+        select id, name, price, stock from products where id = #{id}
+    </select>
+
+    <!-- ==================== 查：全部 ==================== -->
+    <select id="selectAllProducts" resultMap="productsResult">
+        select id, name, price, stock from products order by id
+    </select>
+
+    <!-- ==================== 查：名称模糊 + 库存下限（动态 SQL） ==================== -->
+    <select id="searchProduct" parameterType="map" resultMap="productsResult">
+        select id, name, price, stock from products
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="minStock != null">
+                and stock &gt;= #{minStock}
+            </if>
+        </where>
+        order by id
+    </select>
+
+    <!-- 名称模糊查询（保持原有方法名，供已有测试使用） -->
+    <select id="searchProductByName" parameterType="string"
+            resultMap="productsResult">
+        select id, name, price, stock from products
         <where>
             <if test="_parameter != null and _parameter != ''">
                 name like concat('%', #{name}, '%')
@@ -19,7 +90,15 @@
         order by id
     </select>
 
-    <!-- 二级缓存：需实体类实现 Serializable -->
-    <cache/>
+    <!--
+        说明：此处原有一个 <cache/>（二级缓存）。
+        它作用于整个 ProductMapper 命名空间，而注解方法与 XML 方法共用该命名空间，
+        但缓存只在本命名空间内的写操作时被清空。
+        因此若用 MySQL 客户端直接改库（演示时常这样做），
+        XML 版查询会返回旧值、注解版查询返回新值 —— 同一行数据两种写法结果不一致，
+        恰好破坏了本模块要演示的"两种写法等价"。
+        为保证演示行为可预期，此处不启用二级缓存。
+        如需演示缓存，请另行说明其失效条件。
+    -->
 
 </mapper>

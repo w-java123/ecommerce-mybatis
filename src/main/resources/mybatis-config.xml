@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+    <!-- 引入 db.properties 数据库连接配置文件 -->
+    <properties resource="db.properties"/>
+
+    <settings>
+        <!-- 开启二级缓存 -->
+        <setting name="cacheEnabled" value="true"/>
+        <!-- 开启延迟加载 -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <!-- 关闭积极加载，按需加载关联对象 -->
+        <setting name="aggressiveLazyLoading" value="false"/>
+        <!-- 开启驼峰命名自动映射：order_date -> orderDate -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- 控制台打印 SQL 日志 -->
+        <setting name="logImpl" value="LOG4J"/>
+    </settings>
+
+    <typeAliases>
+        <!-- 为 po 包下所有实体类注册别名，别名默认为类名首字母小写 -->
+        <package name="com.wangzhoujun17.po"/>
+    </typeAliases>
+
+    <environments default="mysql">
+        <environment id="mysql">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver"   value="${mysql.driver}"/>
+                <property name="url"      value="${mysql.url}"/>
+                <property name="username" value="${mysql.username}"/>
+                <property name="password" value="${mysql.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <mappers>
+        <mapper resource="com/wangzhoujun17/mapper/UserMapper.xml"/>
+        <mapper resource="com/wangzhoujun17/mapper/ProductMapper.xml"/>
+        <mapper resource="com/wangzhoujun17/mapper/OrdersMapper.xml"/>
+        <mapper resource="com/wangzhoujun17/mapper/OrderDetailMapper.xml"/>
+    </mappers>
+</configuration>

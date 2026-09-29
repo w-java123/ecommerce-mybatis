@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhoujun17.mapper.OrdersMapper">
+
+    <resultMap type="Orders" id="ordersResult">
+        <id     property="id"        column="id"/>
+        <result property="userId"    column="user_id"/>
+        <result property="orderDate" column="order_date"/>
+    </resultMap>
+
+    <!-- 嵌套查询公用：根据订单ID查询该订单包含的商品 -->
+    <select id="findProductByOrdersId" parameterType="int" resultType="Products">
+        select p.id, p.name, p.price, p.stock
+        from products p
+        inner join orderdetails od on od.product_id = p.id
+        where od.order_id = #{id}
+    </select>
+
+    <!-- ==================== 动态 SQL 修改订单 ==================== -->
+    <update id="updateOrders" parameterType="Orders">
+        update orders
+        <set>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="orderDate != null">
+                order_date = #{orderDate},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- ==================== 动态 SQL：按日期区间查询 ==================== -->
+    <select id="findOrdersByDateRange" resultMap="ordersResult">
+        select * from orders
+        <where>
+            <if test="begin != null">
+                and order_date &gt;= #{begin}
+            </if>
+            <if test="end != null">
+                and order_date &lt;= #{end}
+            </if>
+        </where>
+        order by order_date
+    </select>
+
+    <!-- ==================== 关联查询：多对一 ====================
+         多个订单 -> 一个用户，使用 association 标签
+         ======================================================= -->
+    <resultMap type="Orders" id="OrdersWithUserResult" extends="ordersResult">
+        <association property="user" javaType="Users">
+            <id     property="id"       column="uid"/>
+            <result property="username" column="username"/>
+            <result property="password" column="password"/>
+            <result property="email"    column="email"/>
+        </association>
+    </resultMap>
+
+    <select id="findOrdersWithUser" parameterType="int"
+            resultMap="OrdersWithUserResult">
+        select o.id, o.user_id, o.order_date,
+               u.id as uid, u.username, u.password, u.email
+        from orders o
+        inner join users u on o.user_id = u.id
+        where o.id = #{id}
+    </select>
+
+    <!-- ==================== 关联查询：多对多（方式一：嵌套查询） ====================
+         collection + select 属性，MyBatis 会额外发送一条 SQL 查询商品
+         ========================================================================== -->
+    <resultMap type="Orders" id="OrdersWithProductResult" extends="ordersResult">
+        <collection property="productList" ofType="Products"
+                    select="com.wangzhoujun17.mapper.OrdersMapper.findProductByOrdersId"
+                    column="id"/>
+    </resultMap>
+
+    <select id="findOrdersWithProduct" parameterType="int"
+            resultMap="OrdersWithProductResult">
+        select * from orders where id = #{id}
+    </select>
+
+    <!-- ==================== 关联查询：多对多（方式二：嵌套结果） ====================
+         collection 内直接映射多表连接结果，只发送一条 SQL
+         ========================================================================== -->
+    <resultMap type="Orders" id="OrdersWithProductResult2" extends="ordersResult">
+        <collection property="productList" ofType="Products">
+            <id     property="id"    column="pid"/>
+            <result property="name"  column="pname"/>
+            <result property="price" column="price"/>
+            <result property="stock" column="stock"/>
+        </collection>
+    </resultMap>
+
+    <select id="findOrdersWithProductByJoin" parameterType="int"
+            resultMap="OrdersWithProductResult2">
+        select o.id, o.user_id, o.order_date,
+               p.id as pid, p.name as pname, p.price, p.stock
+        from orders o
+        inner join orderdetails od on od.order_id = o.id
+        inner join products p      on p.id = od.product_id
+        where o.id = #{id}
+        order by p.id
+    </select>
+
+</mapper>

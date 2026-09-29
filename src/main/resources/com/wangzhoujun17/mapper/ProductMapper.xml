@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+     ProductMapper 的全部增删改查均通过接口上的注解实现，
+     本映射文件仅用于演示「接口与映射文件结合」的写法：
+     此处定义名称模糊查询的动态 SQL，接口中保留同名方法声明即可。
+-->
+<mapper namespace="com.wangzhoujun17.mapper.ProductMapper">
+
+    <!-- 名称模糊查询（XML 版，与注解版 findByProductName 二选一使用） -->
+    <select id="searchProductByName" parameterType="string" resultType="Products">
+        select * from products
+        <where>
+            <if test="_parameter != null and _parameter != ''">
+                name like concat('%', #{name}, '%')
+            </if>
+        </where>
+        order by id
+    </select>
+
+    <!-- 二级缓存：需实体类实现 Serializable -->
+    <cache/>
+
+</mapper>

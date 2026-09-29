@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhoujun17.mapper.OrderDetailMapper">
+
+    <resultMap type="OrderDetails" id="detailResult">
+        <id     property="id"        column="id"/>
+        <result property="orderId"   column="order_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="quantity"  column="quantity"/>
+    </resultMap>
+
+    <!-- ==================== 同时映射两个多对一关联 ====================
+         一条订单详情 -> 属于一个订单（多对一）
+                      -> 对应一个商品（多对一）
+         使用两个 association 标签分别映射
+         ================================================================= -->
+    <resultMap type="OrderDetails" id="DetailWithOrderAndProductResult"
+               extends="detailResult">
+        <association property="orders" javaType="Orders">
+            <id     property="id"        column="oid"/>
+            <result property="userId"    column="user_id"/>
+            <result property="orderDate" column="order_date"/>
+        </association>
+        <association property="product" javaType="Products">
+            <id     property="id"    column="pid"/>
+            <result property="name"  column="pname"/>
+            <result property="price" column="price"/>
+            <result property="stock" column="stock"/>
+        </association>
+    </resultMap>
+
+    <select id="findDetailWithOrderAndProduct" parameterType="int"
+            resultMap="DetailWithOrderAndProductResult">
+        select od.id, od.order_id, od.product_id, od.quantity,
+               o.id as oid, o.user_id, o.order_date,
+               p.id as pid, p.name as pname, p.price, p.stock
+        from orderdetails od
+        inner join orders   o on o.id = od.order_id
+        inner join products p on p.id = od.product_id
+        where od.order_id = #{orderId}
+        order by od.id
+    </select>
+
+</mapper>

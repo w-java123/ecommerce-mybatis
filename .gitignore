@@ -7,6 +7,9 @@ target/
 *.iml
 *.ipr
 
+### 截图（本机生成，作为作业材料单独提交）###
+截图/
+
 ### Eclipse ###
 .apt_generated
 .classpath
